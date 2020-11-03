@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 	while(1)
 	{
 		printf("*******Welcome to the Student Information management system*******\n");
-		printf("1.add  2.del  3.modify 4.query 5.quit\n");
+		printf("1.add  2.del  3.modify 4.queryi 5.quit\n");
 		printf("*****************\n");
 		scanf("%d", &n);
 		
@@ -66,20 +66,18 @@ int do_add(int sockfd,MSG *msg)
 {
 	printf("%s\n",__func__);
 
-	//input # 退回上一级菜单
-
 	msg->type = A;
 	printf("input Student id:");
-	scanf("%d",&msg->id);
+	scanf("%d",msg->id);
 	getchar();
 	printf("input name:");
 	scanf("%s",msg->name);
 	getchar();
 	printf("input age:");
-	scanf("%d",&msg->age);
+	scanf("%d",msg->age);
 	getchar();
-	printf("input score:");
-	scanf("%f",&msg->score);
+	printf("input score");
+	scanf("%f",msg->score);
 	getchar();
 
 	if(send(sockfd,msg,sizeof(MSG),0)<0)
@@ -91,7 +89,7 @@ int do_add(int sockfd,MSG *msg)
 	if(recv(sockfd,msg,sizeof(MSG),0) < 0)
 	{
 		printf("fail to recv \n");
-		return -1;
+		return -1
 	}
 	
 	printf("%s\n",msg->name); 
@@ -104,17 +102,8 @@ int do_del(int sockfd,MSG *msg)
 
 	printf("%s\n",__func__);
 	msg->type = D;
-	printf("input id:");
-	scanf("%d",&msg->id);
-
 
 	send(sockfd,msg,sizeof(MSG),0);
-	if(recv(sockfd,msg,sizeof(MSG),0) < 0)
-	{
-		printf("fail to recv \n");
-		return -1;
-	}
-	printf("name=%s\n",msg->name); 
 	return 0;
 }
 int do_modify(int sockfd,MSG *msg)
@@ -123,26 +112,7 @@ int do_modify(int sockfd,MSG *msg)
 	printf("%s\n",__func__);
 	
 	msg->type = M;
-
-	printf("input Student id:");
-	scanf("%d",&msg->id);
-	getchar();
-	printf("input name:");
-	scanf("%s",msg->name);
-	getchar();
-	printf("input age:");
-	scanf("%d",&msg->age);
-	getchar();
-	printf("input score:");
-	scanf("%f",&msg->score);
-	getchar();
 	send(sockfd,msg,sizeof(MSG),0);
-	if(recv(sockfd,msg,sizeof(MSG),0) < 0)
-	{
-		printf("fail to recv \n");
-		return -1;
-	}
-	printf("name=%s\n",msg->name); 
 	return 0;
 }
 int do_query(int sockfd,MSG *msg)
@@ -151,26 +121,14 @@ int do_query(int sockfd,MSG *msg)
 	
 	msg->type = Q;
 	printf("input query id:");
-	scanf("%d",&msg->id);
+	scanf("%d",msg->id);
 	getchar();
 	
 	//input # 退回上一级菜单
-//	if(strncmp(msg->id,#,1) == 0)
-//		break;
+	if(strncmp(msg->data,"#",1) == 0)
+		break;
 
-	if(send(sockfd,msg,sizeof(MSG),0) <0)
-	{
-		printf("faile to send\n");
-		return -1;
-	}
-
-	if(recv(sockfd,msg,sizeof(MSG),0) < 0)
-	{
-		printf("fail to recv \n");
-		return -1;
-	}
-	
-	printf("name=%s score=%f\n",msg->name,msg->score); 
+	send(sockfd,msg,sizeof(MSG),0);
 
 	return 0;
 }
