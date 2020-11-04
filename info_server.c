@@ -12,6 +12,8 @@ int do_query(int acceptfd,MSG *msg,sqlite3 *db);
 int do_login(int acceptfd,MSG *msg,sqlite3 *db);
 int do_register(int acceptfd,MSG *msg,sqlite3 *db);
 
+MSG msg_call; //定义一个全局的变量用于接受callback查询数据信息
+
 int main(int argc,char *argv[])
 {
 
@@ -38,7 +40,7 @@ int main(int argc,char *argv[])
 	//
 	//数据库中创建学生信息表
 	
-	sprintf(sql,"create table stuinfo(id integer,name text,age integer,score float)");
+	sprintf(sql,"create table stuinfo(id integer primary key,name text,age integer,score float);");
 	if(sqlite3_exec(db,sql,NULL,NULL,&errmsg) !=SQLITE_OK)
 	{
 		printf("%s\n",errmsg);
@@ -47,7 +49,7 @@ int main(int argc,char *argv[])
 		printf("creat table stuinfo done\n");
 	}
 	//数据库中创建登陆用户记录表
-	sprintf(sql,"create table record(name text,passwd integer)");
+	sprintf(sql,"create table record(name text primary key,passwd integer);");
 	if(sqlite3_exec(db,sql,NULL,NULL,&errmsg) !=SQLITE_OK)
 	{
 		printf("%s\n",errmsg);
@@ -81,12 +83,12 @@ int main(int argc,char *argv[])
 		printf("fail to listen.\n");
 		return -1;
 	}
-	//退出程序后自动处理僵尸进程
+	//退出程序后自动处理回收子进程
 	signal(SIGCHLD,SIG_IGN);
 
 	while(1)
 	{
-		//待定链接
+		//等待clite进行
 		 if((acceptfd = accept(sockfd,NULL,NULL))<0)
 		 {
 		 	perror("fail  to accept");
@@ -100,11 +102,11 @@ int main(int argc,char *argv[])
 		 }
 		 else if(pid == 0) //儿子进程处理客户端请求
 		 {
-		 	close(sockfd);
+		 	close(sockfd); //关闭父进程的老套接字
 			do_client(acceptfd,db);
 		 }
 		 else{
-		 	close(acceptfd);
+		 	close(acceptfd); //父进程关闭新套接字
 		 }
 		
 	}
@@ -118,26 +120,26 @@ int do_client(int acceptfd ,sqlite3 *db)
  //接受客户端发来的信息
 	while(recv(acceptfd ,&msg,sizeof(msg),0) >0)
 	{
-		printf("type:%d \n" ,msg.type);
+		printf("type:%d \n" ,msg.type); 
 		switch(msg.type)
 		{
 			case A:
-				do_add(acceptfd,&msg,db);
+				do_add(acceptfd,&msg,db); //增加学生信息
 				break;
 			case D:
-				do_del(acceptfd,&msg,db);
+				do_del(acceptfd,&msg,db);//删除学生信息
 				break;
 			case M:
-				do_modify(acceptfd,&msg,db);
+				do_modify(acceptfd,&msg,db);//修改学生信息
 				break;
 			case Q:
-				do_query(acceptfd,&msg,db);
+				do_query(acceptfd,&msg,db);//查询学生信息
 				break;
 			case R:
-				do_register(acceptfd,&msg,db);
+				do_register(acceptfd,&msg,db);//注册用户名和密码
 				break;
 			case L:
-				do_login(acceptfd,&msg,db);
+				do_login(acceptfd,&msg,db);   //用户登陆
 				break;
 			default:
 				printf("Invalid data msg\n");
@@ -203,7 +205,7 @@ int do_register(int acceptfd,MSG *msg,sqlite3 *db)
 		printf("do_register ok\n");
 		strcpy(msg->name,"do_register ok\n");
 	}
-	   printf("%s\n",msg->name); //不加这个的时候msg->name 的内容发送不更新?
+	   printf("%s\n",msg->name);
 
 	if(send(acceptfd,msg,sizeof(MSG),0)<0)
 	{
@@ -229,10 +231,10 @@ int do_add(int acceptfd,MSG *msg,sqlite3 *db)
 	else
 	{
 		printf(" add Information ok\n");
-		strcpy(msg->name,"OK!");
+		strcpy(msg->name,"OK!"); //成功反馈ok		
 	}
 	printf("%s\n",msg->name);
-	if(send(acceptfd,msg,sizeof(MSG),0) < 0)
+	if(send(acceptfd,msg,sizeof(MSG),0) < 0) //反馈客户端
 	{
 		perror("fail to send");
 	}
@@ -258,7 +260,7 @@ int do_del(int acceptfd,MSG *msg,sqlite3 *db)
 	    strcpy(msg->name,"delete done");
 	}
 	printf("%s\n",msg->name);
-	   if(send(acceptfd,msg,sizeof(MSG),0) < 0)
+	   if(send(acceptfd,msg,sizeof(MSG),0) < 0) //反馈客户端
 	     {
 		    perror("fail to send");
 	     }
@@ -272,7 +274,7 @@ int do_modify(int acceptfd,MSG *msg,sqlite3 *db)
 
 	printf("%s\n",__func__);
 	//修改信息
-	sprintf(sql,"update stuinfo set name='%s',age=%d,score=%f where id =%d",msg->name,msg->age,msg->score,msg->id);
+	sprintf(sql,"update stuinfo set name='%s',age=%d,score=%f where id =%d;",msg->name,msg->age,msg->score,msg->id);
 	if(sqlite3_exec(db,sql,NULL,NULL,&errmsg)!=SQLITE_OK)
 	{
 		printf("%s\n",errmsg);
@@ -281,10 +283,10 @@ int do_modify(int acceptfd,MSG *msg,sqlite3 *db)
 	else
 	{
 		printf("Update done \n");
-	    strcpy(msg->name,"Update done");
+	    strcpy(msg->name,"update done");
 	}
 		printf("%s\n",msg->name);
-	   if(send(acceptfd,msg,sizeof(MSG),0) < 0)
+	   if(send(acceptfd,msg,sizeof(MSG),0) < 0)//反馈客户端
 	     {
 		    perror("fail to send");
 	     }
@@ -294,29 +296,29 @@ int do_modify(int acceptfd,MSG *msg,sqlite3 *db)
 int query_callback(void *arg,int f_num, char** f_value,char **f_name)
 {
 	int acceptfd;
-	int i;
-	MSG msg;
-	acceptfd =*((int *)arg);
+	int i=0;
+
+	acceptfd =*((int *)arg); //未用,用于发送msg 给客户端
 	
 	printf("%s\n",__func__);
-	for(i=0;i<f_num;i=i+4)
-	{
-		//一条信息的内容
+	    msg_call.type =0;
+		//打印查询到的信息
 		printf("%s ",f_value[i]);
 		printf("%s ",f_value[i+1]);
 		printf("%s ",f_value[i+2]);
 		printf("%s \n",f_value[i+3]);		
-	
-		sprintf(msg.name,"%s",f_value[i+1]);
+		strcpy(msg_call.name,f_value[i+1]);
 		//将字符数值转为float类型
-      	msg.score = atof(f_value[i+3]); 
-
-		
+      	msg_call.score = atof(f_value[i+3]); 
+#if 0
 	  if(send(acceptfd,&msg,sizeof(MSG),0) < 0)
 	  {
 		perror("fail to send");
 	   }
-	}
+	  else{
+	  	printf("###########\n");
+	  }
+#endif
 
 	return 0;
 }
@@ -324,25 +326,30 @@ int do_query(int acceptfd,MSG *msg,sqlite3 *db)
 {
 	char *errmsg;
 	char sql[128];
+	int ret;
+    msg_call.type = 10; //当做是否有callback 有数据的标志位
+	
+
 	printf("%s\n",__func__);
 	printf("id =%d\n",msg->id);
     //查询对应的id 记录信息
-	sprintf(sql,"select * from stuinfo where id = %d",msg->id);
+	sprintf(sql,"select * from stuinfo where id=%d;",msg->id);
 	//有一条记录就执行回调函数
 	if(sqlite3_exec(db,sql,query_callback,(void *)&acceptfd,&errmsg)!=SQLITE_OK)
 	{
 		printf("%s\n",errmsg);
 	}
-	else{
-	
-	    	strcpy(msg->name,"faile");
+	if(msg_call.type==10)//如果call_back 没有查询到数据就返回faile
 
-	     if(send(acceptfd,msg,sizeof(MSG),0) < 0)
-	      {
-		    perror("fail to send");
-	       }
-		
-	}
+	{
+		printf("not Information\n");
+		strcpy(msg_call.name,"faile"); 	}
+	
+	printf("*****\n");
+	if(send(acceptfd,&msg_call,sizeof(MSG),0) < 0) //将查询结果返回client
+	  {
+		   perror("fail to send");
+      }
 	printf("-------------\n");
 	return 0;
 }

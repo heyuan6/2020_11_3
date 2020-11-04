@@ -13,20 +13,21 @@
 #include <signal.h>
 
 #define N 32
+//TCP传送的结构体类型.
 typedef struct {
-	int type;
-	int id;
-	char name[N];
-	int  age;
-	float score;
+	int type;     //用于区分不同的功能
+	int id;       //序号或学号
+	char name[N]; //姓名
+	int  age;     //年龄
+	float score;  //分数
 }MSG;
 
-#define  A  1
-#define  D  2
-#define  M  3
-#define  Q  4
-#define  R  5
-#define  L  6
+#define  A  1  //增加学生信息
+#define  D  2  //删除学生信息
+#define  M  3  //修改学生信息
+#define  Q  4  //查询学生信息
+#define  R  5  //注册用户名和密码
+#define  L  6  //用户登陆
 
 
 #endif
