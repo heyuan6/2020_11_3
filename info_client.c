@@ -7,6 +7,7 @@ int do_query(int sockfd,MSG *msg);
 int do_quit(int sockfd,MSG *msg);
 
 int do_register(int sockfd,MSG *msg);
+int do_login(int sockfd,MSG *msg);
 
 int main(int argc, char *argv[])
 {
@@ -34,7 +35,7 @@ int main(int argc, char *argv[])
 	while(1)
 	{
     	printf("********************************\n");
-	   	printf("* 1.register    2.login  3.quit *\n");
+	   	printf("* 1.register    2.login   3.quit *\n");
 		printf("please choose:");
 		scanf("%d",&n);
 		getchar();
@@ -91,15 +92,43 @@ next:
 
 	return 0;
 }
+int do_login(int sockfd,MSG *msg)
+{
+	printf("%s\n",__func__);
+	msg->type = L;
+	printf("input username:");
+	scanf("%s",msg->name);
+	getchar();
+	printf("input passwd:");
+	scanf("%d",&msg->id);
+	getchar();
 
-int do_register(int sockfd,MSG *msg)
+	if((send(sockfd,msg,sizeof(MSG),0)) <0)
+	{
+		printf("send is failed\n");
+		return -1;
+	}
+	if(recv(sockfd,msg,sizeof(MSG),0) <0)
+	{
+		printf("recv is failed\n");
+		return -1;
+	}
+	printf("%s\n",msg->name);
+	if(strncmp(msg->name,"ok",2)==0)
+	{
+		return 1;
+	}
+	return 0;
+
+}int do_register(int sockfd,MSG *msg)
 {
 	printf("%s\n",__func__);
 	msg->type = R;
 	printf("input username:");
 	scanf("%s",msg->name);
 	getchar();
-	scanf("%d",msg->id);
+	printf("input passwd:");
+	scanf("%d",&msg->id);
 	getchar();
 
 	if((send(sockfd,msg,sizeof(MSG),0)) <0)
@@ -121,7 +150,6 @@ int do_add(int sockfd,MSG *msg)
 {
 	printf("%s\n",__func__);
 
-	//input # 退回上一级菜单
 
 	msg->type = A;
 	printf("input Student id:");
@@ -164,6 +192,7 @@ int do_del(int sockfd,MSG *msg)
 
 
 	send(sockfd,msg,sizeof(MSG),0);
+
 	if(recv(sockfd,msg,sizeof(MSG),0) < 0)
 	{
 		printf("fail to recv \n");
@@ -197,7 +226,7 @@ int do_modify(int sockfd,MSG *msg)
 		printf("fail to recv \n");
 		return -1;
 	}
-	printf("name=%s\n",msg->name); 
+	printf("%s\n",msg->name); 
 	return 0;
 }
 int do_query(int sockfd,MSG *msg)
@@ -224,8 +253,16 @@ int do_query(int sockfd,MSG *msg)
 		printf("fail to recv \n");
 		return -1;
 	}
-	
-	printf("name=%s score=%f\n",msg->name,msg->score); 
+	if(strncmp(msg->name,"faile",5)==0)
+	{
+		printf("not the id\n");
+		return 0;
+	}
+	else{
+
+		printf("name=%s score=%f\n",msg->name,msg->score); 
+	}
+
 
 	return 0;
 }
