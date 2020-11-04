@@ -119,6 +119,10 @@ int do_client(int acceptfd ,sqlite3 *db)
 			case Q:
 				do_query(acceptfd,&msg,db);
 				break;
+			case R:
+				do_register(acceptfd,&msg,db);
+				break;
+
 			default:
 				printf("Invalid data msg\n");
 				break;
@@ -127,6 +131,14 @@ int do_client(int acceptfd ,sqlite3 *db)
 	printf("client exit.\n");
 	close(acceptfd);
 	exit(0);
+}
+
+int do_register(int acceptfd,MSG *msg,sqlite3 *db)
+{
+	char *errmsg;
+	char sql[128];
+	printf("%s\n",__func__);
+
 }
 
 int do_add(int acceptfd,MSG *msg,sqlite3 *db)

@@ -25,6 +25,7 @@ typedef struct {
 #define  D  2
 #define  M  3
 #define  Q  4
+#define  R  5
 
 
 #endif
